@@ -16,7 +16,7 @@ services:
     restart: unless-stopped
 
   web-dashboard:
-    build: 
+    build:
       context: ./web-dashboard
     container_name: tugumas_dashboard
     ports:
@@ -36,10 +36,11 @@ services:
       context: ./scanner
     container_name: tugumas_scanner
     ports:
-      - "5001:5001"    
+      - "5001:5001"
     volumes:
       # Mount folder instance agar file scanner.db (hasil ekstraksi wajah) persisten
       - ./scanner/instance:/app/instance
+      - ./scanner/templates:/app/templates
     depends_on:
       - db
     restart: unless-stopped
