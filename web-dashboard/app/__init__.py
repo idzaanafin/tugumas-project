@@ -37,4 +37,14 @@ def create_app():
     app.register_blueprint(departments_bp)
     app.register_blueprint(positions_bp)
 
+    @app.template_filter("smart_hours")
+    def smart_hours(value):
+        if value is None:
+            return "-"
+
+        if float(value).is_integer():
+            return int(value)
+
+        return value
+
     return app

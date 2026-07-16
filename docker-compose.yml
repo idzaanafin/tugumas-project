@@ -24,9 +24,9 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:dbtmo12345@db:5432/tugumas
       - SECRET_KEY=rahasia12345cihuy
-    volumes:
-      # Mount folder uploads agar foto profil pegawai tidak hilang saat restart
-      - ./web-dashboard/app/static/uploads/employees:/app/app/static/uploads/employees
+    volumes:      
+      # - ./web-dashboard/app/static/uploads/employees:/app/app/static/uploads/employees
+      - ./web-dashboard:/app
     depends_on:
       - db
     restart: unless-stopped

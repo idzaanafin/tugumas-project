@@ -143,6 +143,28 @@ def _parse_note(value: str | None):
     value = (value or "").strip()
     return value or None
 
+def work_hours(start_time: time, end_time: time) -> float:
+    """Calculate work hours between two time objects."""
+    if not start_time or not end_time:
+        return 0.0
+
+    start_dt = datetime.combine(date.today(), start_time)
+    end_dt = datetime.combine(date.today(), end_time)
+
+    if end_dt < start_dt:
+        # If end time is before start time, assume it crosses midnight
+        end_dt += timedelta(days=1)
+
+    duration = end_dt - start_dt
+    return duration.total_seconds() / 3600.0  # Convert seconds to hours
+
+def overtime_hours(start_time: time, end_time: time) -> float:
+    """Calculate overtime hours based on work hours."""
+    total_work_hours = work_hours(start_time, end_time)
+    standard_work_hours = 8.0
+    overtime = max(0.0, total_work_hours - standard_work_hours)
+    return overtime
+
 
 def get_employee_month_detail(employee_id, year: int | None = None, month: int | None = None):
     employee = get_employee(employee_id)
@@ -176,12 +198,12 @@ def get_employee_month_detail(employee_id, year: int | None = None, month: int |
                 "record": record,
                 "status": record.status if record else None,
                 "status_label": _status_label(record.status if record else None),
-                "jam_masuk": _format_time(record.jam_masuk) if record else "-",
-                # TAMBAHAN DI SINI
+                "jam_masuk": _format_time(record.jam_masuk) if record else "-",                
                 "jam_izin_keluar": _format_time(record.jam_izin_keluar) if record else "-",
-                "jam_izin_masuk": _format_time(record.jam_izin_masuk) if record else "-",
-                # ----------------
+                "jam_izin_masuk": _format_time(record.jam_izin_masuk) if record else "-",                
                 "jam_keluar": _format_time(record.jam_keluar) if record else "-",
+                "lembur": overtime_hours(record.jam_masuk, record.jam_keluar) if record and record.jam_masuk and record.jam_keluar else 0.0,
+                "jam_kerja": work_hours(record.jam_masuk, record.jam_keluar) if record and record.jam_masuk and record.jam_keluar else 0.0,
                 "keterangan": record.keterangan if record and record.keterangan else "-",
             }
         )
@@ -324,9 +346,10 @@ def delete_attendance(attendance: Attendance):
 
 
 def process_scan_attendance(employee_id: str, scan_datetime: datetime):
-    BATAS_MASUK = datetime.strptime("08:00", "%H:%M").time()
-    BATAS_LEMBUR_PAGI = datetime.strptime("06:00", "%H:%M").time()
+    BATAS_MASUK = datetime.strptime("08:15", "%H:%M").time()
+    BATAS_LEMBUR_PAGI = datetime.strptime("07:30", "%H:%M").time()
     BATAS_LEMBUR_SORE = datetime.strptime("17:00", "%H:%M").time()
+    BATAS_PULANG = datetime.strptime("15:50", "%H:%M").time()
     
     employee = get_employee(employee_id)    
     if not employee:
@@ -342,7 +365,7 @@ def process_scan_attendance(employee_id: str, scan_datetime: datetime):
 
     # SKENARIO 1: Belum ada data hari ini -> Catat Jam Masuk
     if not attendance:
-        keterangan = "tepat waktu"
+        keterangan = "hadir tepat waktu"
         if scan_time > BATAS_MASUK:
             keterangan = "terlambat"
         elif scan_time < BATAS_LEMBUR_PAGI:
@@ -380,12 +403,26 @@ def process_scan_attendance(employee_id: str, scan_datetime: datetime):
         attendance.jam_keluar = scan_time
         
         # Logika keterangan lembur sore
-        if scan_time > BATAS_LEMBUR_SORE:
+        if scan_time < BATAS_PULANG:
+            if attendance.keterangan:
+                if "pulang lebih awal" not in attendance.keterangan:
+                    attendance.keterangan += ", pulang lebih awal"
+            else:
+                attendance.keterangan = "pulang lebih awal"
+
+        elif scan_time > BATAS_LEMBUR_SORE:
             if attendance.keterangan:
                 if "lembur sore" not in attendance.keterangan:
                     attendance.keterangan += ", lembur sore"
             else:
                 attendance.keterangan = "lembur sore"
+
+        else:
+            if attendance.keterangan:
+                if "pulang tepat waktu" not in attendance.keterangan:
+                    attendance.keterangan += ", pulang tepat waktu"
+            else:
+                attendance.keterangan = "pulang tepat waktu"
 
         db.session.commit()
         return {
@@ -407,9 +444,9 @@ def process_scan_attendance(employee_id: str, scan_datetime: datetime):
         # Kosongkan kembali jam_keluar untuk persiapan Scan ke-4
         attendance.jam_keluar = None 
         
-        # Bersihkan keterangan 'lembur sore' karena ternyata pegawai belum pulang
-        if attendance.keterangan and "lembur sore" in attendance.keterangan:
-            ket_list = [k.strip() for k in attendance.keterangan.split(",") if "lembur sore" not in k.strip()]
+        # Bersihkan keterangan 'pulang lebih awal' karena ternyata pegawai belum pulang
+        if attendance.keterangan and "pulang lebih awal" in attendance.keterangan:
+            ket_list = [k.strip() for k in attendance.keterangan.split(",") if "pulang lebih awal" not in k.strip()]
             attendance.keterangan = ", ".join(ket_list) if ket_list else None
             
         db.session.commit()
@@ -429,10 +466,16 @@ def process_scan_attendance(employee_id: str, scan_datetime: datetime):
         
         if scan_time > BATAS_LEMBUR_SORE:
             if attendance.keterangan:
-                if "lembur sore" not in attendance.keterangan:
-                    attendance.keterangan += ", lembur sore"
+                if "lembur sore (setelah izin)" not in attendance.keterangan:
+                    attendance.keterangan += ", lembur sore (setelah izin)"
             else:
-                attendance.keterangan = "lembur sore"
+                attendance.keterangan = "lembur sore (setelah izin)"
+        else:
+            if attendance.keterangan:
+                if "pulang tepat waktu (setelah izin)" not in attendance.keterangan:
+                    attendance.keterangan += ", pulang tepat waktu (setelah izin)"
+            else:
+                attendance.keterangan = "pulang tepat waktu (setelah izin)"
 
         db.session.commit()
         return {
