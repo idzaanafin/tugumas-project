@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: tugumas_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: dbtmo12345
+      POSTGRES_DB: tugumas
+    ports:
+      - "5432:5432"
+    volumes:
+      # Mount untuk mengamankan data PostgreSQL
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  web-dashboard:
+    build: 
+      context: ./web-dashboard
+    container_name: tugumas_dashboard
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:dbtmo12345@db:5432/tugumas
+      - SECRET_KEY=rahasia12345cihuy
+    volumes:
+      # Mount folder uploads agar foto profil pegawai tidak hilang saat restart
+      - ./web-dashboard/app/static/uploads/employees:/app/app/static/uploads/employees
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  scanner:
+    build:
+      context: ./scanner
+    container_name: tugumas_scanner
+    ports:
+      - "5001:5001"    
+    volumes:
+      # Mount folder instance agar file scanner.db (hasil ekstraksi wajah) persisten
+      - ./scanner/instance:/app/instance
+    depends_on:
+      - db
+    restart: unless-stopped
+
+volumes:
+  pgdata:

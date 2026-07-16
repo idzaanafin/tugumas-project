@@ -1,0 +1,53 @@
+{% extends "layouts/app.html" %}
+
+{% block content %}
+
+<div class="space-y-6">
+	<div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+		<div>
+			<p class="text-xl font-semibold uppercase tracking-[0.35em] text-cyan-300">Master Data</p>			
+		</div>
+		<a href="{{ url_for('employees.create') }}" class="inline-flex items-center justify-center rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300">Tambah Pegawai</a>
+	</div>
+
+	<div class="overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/10">
+		<table class="min-w-full divide-y divide-white/10 text-left text-sm text-slate-300">
+			<thead class="bg-white/5 text-xs uppercase tracking-[0.2em] text-slate-400">
+				<tr>
+					<th class="px-6 py-4">Pegawai</th>
+					<th class="px-6 py-4">Departemen</th>
+					<th class="px-6 py-4">Posisi</th>
+					<th class="px-6 py-4">Status</th>
+					<th class="px-6 py-4 text-right">Aksi</th>
+				</tr>
+			</thead>
+			<tbody class="divide-y divide-white/5">
+				{% for employee in employees %}
+					<tr class="hover:bg-white/5">
+						<td class="px-6 py-4">
+							<div class="font-medium text-white">{{ employee.nama }}</div>
+							<div class="text-xs text-slate-400">{{ employee.nip }}</div>
+						</td>
+						<td class="px-6 py-4">{{ employee.department.nama if employee.department else '-' }}</td>
+						<td class="px-6 py-4">{{ employee.position.nama if employee.position else '-' }}</td>
+						<td class="px-6 py-4">{{ employee.status }}</td>
+						<td class="px-6 py-4">
+							<div class="flex justify-end gap-2">
+								<a href="{{ url_for('employees.edit', employee_id=employee.id) }}" class="rounded-xl border border-white/10 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10">Edit</a>
+								<form method="post" action="{{ url_for('employees.delete', employee_id=employee.id) }}" onsubmit="return confirm('Hapus pegawai ini?');">
+									<button type="submit" class="rounded-xl border border-rose-500/30 px-4 py-2 text-xs font-semibold text-rose-200 transition hover:bg-rose-500/10">Hapus</button>
+								</form>
+							</div>
+						</td>
+					</tr>
+				{% else %}
+					<tr>
+						<td colspan="5" class="px-6 py-10 text-center text-slate-400">Belum ada pegawai.</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+{% endblock %}

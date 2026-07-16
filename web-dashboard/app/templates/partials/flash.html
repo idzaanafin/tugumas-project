@@ -1,0 +1,78 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+
+<div class="mb-6 space-y-4">
+
+    {% for category, message in messages %}
+
+    {% set success = category == 'success' %}
+
+    <div
+        x-data="{ show: true }"
+        x-show="show"
+        x-transition
+        class="flex items-start gap-4 rounded-2xl border backdrop-blur-xl shadow-xl
+        {{ 'border-emerald-500/20 bg-emerald-500/10' if success else 'border-rose-500/20 bg-rose-500/10' }}">
+
+        <!-- Icon -->
+        <div class="flex h-20 w-12 shrink-0 items-center justify-center rounded-l-2xl
+            {{ 'bg-emerald-500/15 text-emerald-300' if success else 'bg-rose-500/15 text-rose-300' }}">
+
+            {% if success %}
+
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="m5 13 4 4L19 7"/>
+            </svg>
+
+            {% else %}
+
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M12 9v4m0 4h.01M10.29 3.86l-7.5 13A1 1 0 0 0 3.66 18h16.68a1 1 0 0 0 .87-1.5l-7.5-13a1 1 0 0 0-1.74 0Z"/>
+            </svg>
+
+            {% endif %}
+
+        </div>
+
+        <!-- Content -->
+        <div class="flex-1 py-3">
+
+            <p class="font-semibold
+                {{ 'text-emerald-300' if success else 'text-rose-300' }}">
+                {{ 'Berhasil' if success else 'Terjadi Kesalahan' }}
+            </p>
+
+            <p class="mt-1 text-sm text-slate-300">
+                {{ message }}
+            </p>
+
+        </div>
+
+        <!-- Close -->
+        <button
+            onclick="this.parentElement.remove()"
+            class="mr-3 mt-3 rounded-lg p-1 text-slate-500 transition hover:bg-white/10 hover:text-white">
+
+            <svg class="h-5 w-5"
+                 fill="none"
+                 stroke="currentColor"
+                 stroke-width="2">
+                <path stroke-linecap="round"
+                      stroke-linejoin="round"
+                      d="M6 18 18 6M6 6l12 12"/>
+            </svg>
+
+        </button>
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+{% endif %}
+{% endwith %}

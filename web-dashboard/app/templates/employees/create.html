@@ -1,0 +1,82 @@
+{% extends "layouts/app.html" %}
+
+{% block content %}
+
+<div class="mx-auto w-full max-w-5xl rounded-[2rem] border border-white/10 bg-slate-900/80 p-6 shadow-2xl shadow-cyan-950/10">
+    <div class="mb-6 flex items-center justify-between gap-4">
+        <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-300">Pegawai</p>
+            <h1 class="mt-2 text-2xl font-bold text-white">Tambah Pegawai</h1>
+        </div>
+        <a href="{{ url_for('employees.index') }}" class="rounded-xl border border-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10">Kembali</a>
+    </div>
+
+    <form method="post" action="{{ url_for('employees.store') }}" enctype="multipart/form-data" class="grid gap-5 md:grid-cols-2">
+        <div>
+            <label class="mb-2 block text-sm font-medium text-slate-200">NIP</label>
+            <input type="text" name="nip" class="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20" placeholder="TMO-001">
+        </div>
+        <div>
+            <label class="mb-2 block text-sm font-medium text-slate-200">Nama</label>
+            <input type="text" name="nama" class="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20" placeholder="Nama Pegawai">
+        </div>
+        <div>
+            <label class="mb-2 block text-sm font-medium text-slate-200">Nomor HP</label>
+            <input type="text" name="nomor_hp" class="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20" placeholder="08123456789">
+        </div>
+        <div>
+            <label class="mb-2 block text-sm font-medium text-slate-200">Email</label>
+            <input type="email" name="email" class="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20" placeholder="pegawai@perusahaan.com">
+        </div>
+        <div>
+            <label class="mb-2 block text-sm font-medium text-slate-200">Departemen</label>
+            <select name="department_id" class="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20">
+                <option value="">Pilih Departemen</option>
+                {% for department in departments %}
+                    <option value="{{ department.id }}">{{ department.nama }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="mb-2 block text-sm font-medium text-slate-200">Posisi</label>
+            <select name="position_id" class="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20">
+                <option value="">Pilih Posisi</option>
+                {% for position in positions %}
+                    <option value="{{ position.id }}">{{ position.nama }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="mb-2 block text-sm font-medium text-slate-200">Jenis Pegawai</label>
+            <select name="employment_type" class="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20">
+                <option value="">Pilih Jenis</option>
+                {% for employment_type in employment_types %}
+                    <option value="{{ employment_type.name }}">{{ employment_type.value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="mb-2 block text-sm font-medium text-slate-200">Status</label>
+            <select name="status" class="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20">
+                {% for status in employee_statuses %}
+                    <option value="{{ status.name }}" {% if status.name == 'ACTIVE' %}selected{% endif %}>{{ status.value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="mb-2 block text-sm font-medium text-slate-200">Tanggal Masuk</label>
+            <input type="date" name="tanggal_masuk" class="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-3 text-white outline-none transition focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20">
+        </div>
+        <div>
+            <label class="mb-2 block text-sm font-medium text-slate-200">Foto</label>
+            <input type="file" name="foto" class="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-4 py-2 text-sm text-slate-300 file:mr-4 file:rounded-xl file:border-0 file:bg-cyan-400 file:px-4 file:py-2 file:font-semibold file:text-slate-950">
+        </div>
+
+        <div class="md:col-span-2 flex justify-end gap-3">
+            <a href="{{ url_for('employees.index') }}" class="rounded-2xl border border-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/10">Batal</a>
+            <button type="submit" class="rounded-2xl bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950 transition hover:bg-cyan-300">Simpan</button>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

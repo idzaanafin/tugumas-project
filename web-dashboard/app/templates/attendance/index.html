@@ -1,0 +1,355 @@
+{% extends "layouts/app.html" %}
+
+{% block content %}
+<div class="space-y-6">
+
+    {% if view == 'year' %}
+    <!-- ================= STATE 1: PILIH TAHUN ================= -->
+    <section class="rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-2xl shadow-cyan-950/10">
+        <h1 class="text-3xl font-bold text-white">Pilih Tahun</h1>
+        <p class="mt-2 text-sm text-slate-400">Silakan pilih tahun untuk melihat rekap absensi.</p>
+    </section>
+
+    <!-- Grid 4 Kotak Tahun -->
+    <div class="grid grid-cols-2 gap-5 md:grid-cols-4">
+        {% for y in year_options %}
+            <a href="{{ url_for('attendance.index', year=y) }}" 
+               class="group flex flex-col items-center justify-center rounded-[2rem] border p-10 shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-cyan-500/20
+               {% if y == current_year %}
+                   border-cyan-400 bg-cyan-950/60 shadow-cyan-900/30
+               {% else %}
+                   border-white/10 bg-slate-900/80 shadow-cyan-950/10 hover:border-cyan-500/50 hover:bg-cyan-950/30
+               {% endif %}">
+                
+                <span class="text-4xl font-black transition-colors 
+                    {% if y == current_year %}
+                        text-cyan-300
+                    {% else %}
+                        text-slate-300 group-hover:text-cyan-400
+                    {% endif %}">{{ y }}</span>
+                
+                {% if y == current_year %}
+                    <span class="mt-2 rounded-full bg-cyan-500/20 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-cyan-300">
+                        Tahun Ini
+                    </span>
+                {% endif %}
+            </a>
+        {% endfor %}
+    </div>
+
+    <!-- Kontrol Navigasi Geser (Pagination) -->
+    <div class="flex items-center justify-center gap-4">
+        <a href="{{ url_for('attendance.index', start_year=prev_start) }}" class="flex items-center gap-2 rounded-xl border border-white/10 bg-slate-900/50 px-5 py-3 text-sm font-semibold text-slate-400 transition hover:bg-white/5 hover:text-white">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+            Tahun Sebelumnya
+        </a>
+        
+        <span class="text-xs font-medium uppercase tracking-widest text-slate-500">{{ year_options[0] }} - {{ year_options[-1] }}</span>
+        
+        <a href="{{ url_for('attendance.index', start_year=next_start) }}" class="flex items-center gap-2 rounded-xl border border-white/10 bg-slate-900/50 px-5 py-3 text-sm font-semibold text-slate-400 transition hover:bg-white/5 hover:text-white">
+            Selanjutnya
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+        </a>
+    </div>
+
+    {% elif view == 'month' %}
+    <!-- ================= STATE 2: PILIH BULAN ================= -->
+    <section class="rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-2xl shadow-cyan-950/10">
+        <a href="{{ url_for('attendance.index') }}" class="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-cyan-400 transition hover:text-cyan-300">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            Kembali ke Pilih Tahun
+        </a>
+        <h1 class="text-3xl font-bold text-white">Bulan di Tahun {{ selected_year }}</h1>
+        <p class="mt-2 text-sm text-slate-400">Pilih bulan untuk membuka detail tabel kehadiran pegawai.</p>
+    </section>
+
+    <!-- Grid 12 Kotak Bulan -->
+    <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        {% for m in month_options %}
+            <a href="{{ url_for('attendance.index', year=selected_year, month=m.value) }}" 
+               class="group flex flex-col items-center justify-center rounded-3xl border p-6 shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-cyan-500/20
+               {% if selected_year == current_year and m.value == current_month %}
+                   border-cyan-400 bg-cyan-950/60 shadow-cyan-900/30
+               {% else %}
+                   border-white/10 bg-slate-900/80 shadow-cyan-950/10 hover:border-cyan-500/50 hover:bg-cyan-950/30
+               {% endif %}">
+                
+                <span class="text-xl font-bold transition-colors 
+                    {% if selected_year == current_year and m.value == current_month %}
+                        text-cyan-300
+                    {% else %}
+                        text-slate-300 group-hover:text-cyan-400
+                    {% endif %}">{{ m.label }}</span>
+                
+                {% if selected_year == current_year and m.value == current_month %}
+                    <span class="mt-2 rounded-full bg-cyan-500/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-cyan-300">
+                        Bulan Ini
+                    </span>
+                {% endif %}
+            </a>
+        {% endfor %}
+    </div>
+
+    {% elif view == 'table' %}
+    <!-- ================= STATE 3: KARTU PEGAWAI (PAGINATION) ================= -->
+    <div class="flex flex-wrap items-center justify-between gap-4">
+        <a href="{{ url_for('attendance.index', year=selected_year) }}" class="inline-flex items-center gap-2 text-sm font-semibold text-cyan-400 transition hover:text-cyan-300">
+            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            Pilih Bulan {{ selected_year }}
+        </a>
+        <div class="rounded-full border border-cyan-500/30 bg-cyan-950/40 px-4 py-1 text-xs font-bold tracking-widest text-cyan-300">
+            {{ month_label | upper }} {{ selected_year }}
+        </div>
+    </div>
+
+    {% if empty %}
+        <div class="flex min-h-[40vh] items-center justify-center rounded-[2rem] border border-white/10 bg-slate-900/50 p-10 text-slate-400">
+            Belum ada data pegawai di sistem.
+        </div>
+    {% else %}
+        <!-- Kontrol Pagination Pegawai (Atas) -->
+        <div class="flex flex-col-reverse items-center justify-between gap-4 rounded-[2rem] border border-white/10 bg-slate-900/80 p-4 shadow-xl sm:flex-row sm:p-3">
+            
+            <!-- Tombol Prev -->
+            <a {% if prev_idx is not none %} href="{{ url_for('attendance.index', year=selected_year, month=selected_month, emp_idx=prev_idx) }}" {% endif %} 
+               class="flex w-full items-center justify-center gap-2 rounded-xl border border-white/5 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition sm:w-auto sm:py-2
+               {% if prev_idx is none %} opacity-30 cursor-not-allowed {% else %} hover:bg-white/10 hover:border-white/10 {% endif %}">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
+                Sebelumnya
+            </a>
+            
+            <!-- TENGAH: Dropdown Selector Pegawai -->            
+            <div class="relative w-full sm:w-auto">
+
+                <button
+                    id="employeeDropdownButton"
+                    data-dropdown-toggle="employeeDropdown"
+                    class="inline-flex w-full items-center justify-between gap-4 rounded-2xl border border-white/10 bg-slate-900/80 px-4 py-3 text-left transition hover:border-cyan-400/40 hover:bg-slate-900 sm:w-80"
+                    type="button"
+                >
+                    <div class="flex items-center gap-3">
+
+                        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-500/15">
+                            <svg class="h-5 w-5 text-cyan-300"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="M15.75 6.75a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.118a7.5 7.5 0 0 1 15 0"/>
+                            </svg>
+                        </div>
+
+                        <div>
+                            <div class="text-sm font-semibold text-white">
+                                {{ employee.nama }}
+                            </div>
+
+                            <div class="text-xs text-slate-400">
+                                Pilih Pegawai
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <svg class="h-5 w-5 text-slate-400"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round"
+                            stroke-linejoin="round"
+                            d="m6 9 6 6 6-6"/>
+                    </svg>
+                </button>
+
+
+                <div
+                    id="employeeDropdown"
+                    class="z-50 hidden w-full rounded-2xl border border-white/10 bg-slate-900 p-2 shadow-2xl sm:w-80"
+                >
+
+                    <div class="mb-2">
+                        <input
+                            id="employeeSearch"
+                            type="text"
+                            placeholder="Cari pegawai..."
+                            class="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-sm text-white placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none"
+                        >
+                    </div>
+
+                    <div
+                        id="employeeList"
+                        class="max-h-72 overflow-y-auto space-y-1"
+                    >
+
+                        {% for emp in employees_list %}
+
+                        <a
+                            href="{{ url_for('attendance.index', year=selected_year, month=selected_month, emp_idx=emp.idx) }}"
+                            class="employee-item flex items-center justify-between rounded-xl px-3 py-2 text-sm text-slate-300 transition hover:bg-cyan-500/10 hover:text-white"
+                            data-name="{{ emp.nama|lower }}"
+                        >
+
+                            <span>{{ emp.nama }}</span>
+
+                            {% if emp.idx == emp_idx %}
+                            <svg class="h-4 w-4 text-cyan-400"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    d="m5 13 4 4L19 7"/>
+                            </svg>
+                            {% endif %}
+
+                        </a>
+
+                        {% endfor %}
+
+                    </div>
+
+                </div>
+
+            </div>
+            
+            <!-- Tombol Next -->
+            <a {% if next_idx is not none %} href="{{ url_for('attendance.index', year=selected_year, month=selected_month, emp_idx=next_idx) }}" {% endif %} 
+               class="flex w-full items-center justify-center gap-2 rounded-xl border border-white/5 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition sm:w-auto sm:py-2
+               {% if next_idx is none %} opacity-30 cursor-not-allowed {% else %} hover:bg-white/10 hover:border-white/10 {% endif %}">
+                Selanjutnya
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+            </a>
+            
+        </div>
+    {% endif %}
+        <!-- Kartu Detail Pegawai -->
+        <section class="overflow-hidden rounded-[2rem] border border-white/10 bg-slate-900 shadow-2xl shadow-cyan-950/20">
+            <!-- Header Kartu -->
+            <div class="flex flex-col gap-6 border-b border-white/10 bg-white/5 p-6 md:flex-row md:items-center md:justify-between">
+                <div class="flex items-center gap-5">
+                    <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 text-2xl font-bold text-white shadow-lg">
+                        {{ employee.nama[:1] }}
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-white">{{ employee.nama }}</h2>
+                        <p class="text-sm text-slate-400">NIP: {{ employee.nip }}</p>
+                    </div>
+                </div>
+                
+                <!-- Rekap H, I, A -->
+                <div class="flex gap-3">
+                    <div class="flex flex-col items-center justify-center rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-5 py-2">
+                        <span class="text-xs font-semibold text-emerald-400">Hadir</span>
+                        <span class="text-xl font-bold text-emerald-200">{{ summary.hadir }}</span>
+                    </div>
+                    <div class="flex flex-col items-center justify-center rounded-xl border border-amber-500/20 bg-amber-500/10 px-5 py-2">
+                        <span class="text-xs font-semibold text-amber-400">Izin</span>
+                        <span class="text-xl font-bold text-amber-200">{{ summary.izin }}</span>
+                    </div>
+                    <div class="flex flex-col items-center justify-center rounded-xl border border-rose-500/20 bg-rose-500/10 px-5 py-2">
+                        <span class="text-xs font-semibold text-rose-400">Alpa</span>
+                        <span class="text-xl font-bold text-rose-200">{{ summary.alpa }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabel Vertikal Detail Hari -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-300">
+                    <thead class="bg-slate-950 text-xs uppercase tracking-wider text-slate-400">
+                        <tr>
+                            <th class="border-b border-white/10 px-6 py-4">Tanggal</th>
+                            <th class="border-b border-white/10 px-6 py-4 text-center">Status</th>
+                            <th class="border-b border-white/10 px-6 py-4">Masuk - Keluar</th>
+                            <th class="border-b border-white/10 px-6 py-4">Keterangan</th>
+                            <th class="border-b border-white/10 px-6 py-4 text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+                        {% for day in days %}
+                        <tr class="transition hover:bg-white/5">
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-white">{{ day.date.strftime('%d %b %Y') }}</div>
+                                <div class="text-xs text-slate-500">{{ day.weekday }}</div>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                {% if day.status %}
+                                    {% set badge_class = 'bg-emerald-500/15 text-emerald-200 border-emerald-500/30' if day.status == 'H' else 'bg-amber-500/15 text-amber-200 border-amber-500/30' if day.status == 'I' else 'bg-rose-500/15 text-rose-200 border-rose-500/30' %}
+                                    <span class="inline-flex items-center justify-center rounded-lg border px-3 py-1 text-xs font-bold {{ badge_class }}">
+                                        {{ day.status_label }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-xs text-slate-600">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4">
+                                {% if day.record %}
+                                    <!-- Menampilkan Jam Masuk dan Keluar (Utama) -->
+                                    <div class="font-mono text-cyan-300">{{ day.jam_masuk }} - {{ day.jam_keluar }}</div>
+                                    
+                                    <!-- MODIFIKASI: Tampilkan Jam Izin jika ada -->
+                                    {% if day.jam_izin_keluar != '-' or day.jam_izin_masuk != '-' %}
+                                    <div class="mt-1 flex items-center gap-1 text-[10px] text-amber-400">
+                                        <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        Izin: {{ day.jam_izin_keluar }} ke {{ day.jam_izin_masuk }}
+                                    </div>
+                                    {% endif %}
+                                    
+                                {% else %}
+                                    <span class="text-slate-600">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 max-w-[200px] truncate" title="{{ day.keterangan }}">
+                                {{ day.keterangan }}
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                {% if day.record %}
+                                    <a href="{{ url_for('attendance.edit', attendance_id=day.record.id) }}" class="inline-flex items-center gap-1 rounded-lg border border-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/10">Edit</a>
+                                {% else %}
+                                    <a href="{{ url_for('attendance.create', employee_id=employee.id, year=selected_year, month=selected_month, day=day.date.day) }}" class="inline-flex items-center gap-1 rounded-lg bg-cyan-500/20 px-3 py-1.5 text-xs font-bold text-cyan-300 transition hover:bg-cyan-500/40">Isi Absen</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    
+    
+   
+    {% endif %}
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+    const search = document.getElementById("employeeSearch");
+
+    if (!search) return;
+
+    search.addEventListener("input", function () {
+
+        const keyword = this.value.toLowerCase();
+
+        document.querySelectorAll(".employee-item").forEach(item => {
+
+            item.style.display =
+                item.dataset.name.includes(keyword)
+                    ? "flex"
+                    : "none";
+
+        });
+
+    });
+
+});
+</script>
+{% endblock %}

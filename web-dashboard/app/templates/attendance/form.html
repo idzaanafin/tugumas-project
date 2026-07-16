@@ -1,0 +1,228 @@
+{% extends "layouts/app.html" %}
+
+{% block content %}
+
+<div class="mx-auto max-w-5xl">
+
+    <div class="rounded-[2rem] border border-white/10 bg-slate-900/80 shadow-2xl shadow-cyan-950/20 backdrop-blur">
+
+        <!-- Header -->
+        <div class="flex flex-col gap-6 border-b border-white/10 p-8 md:flex-row md:items-center md:justify-between">
+
+            <div class="flex items-center gap-5">
+
+                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-xl">
+                    <i data-lucide="clipboard-check" class="h-8 w-8"></i>
+                </div>
+
+                <div>
+
+                    <p class="text-xs font-semibold uppercase tracking-[0.35em] text-cyan-300">
+                        Attendance
+                    </p>
+
+                    <h1 class="mt-1 text-3xl font-bold text-white">
+                        {{ 'Edit Absensi' if mode == 'edit' else 'Tambah Absensi' }}
+                    </h1>
+
+                    <p class="mt-1 text-sm text-slate-400">
+                        Lengkapi data absensi pegawai.
+                    </p>
+
+                </div>
+
+            </div>
+
+            <a
+                href="{{ cancel_url }}"
+                class="inline-flex items-center gap-2 rounded-xl border border-white/10 px-5 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/10 hover:text-white">
+
+                <i data-lucide="arrow-left" class="h-4 w-4"></i>
+
+                Kembali
+
+            </a>
+
+        </div>
+
+        <form
+            method="post"
+            action="{{ form_action }}"
+            class="space-y-8 p-8">
+
+            <input type="hidden" name="return_year" value="{{ selected_year }}">
+            <input type="hidden" name="return_month" value="{{ selected_month }}">
+
+            <div class="grid gap-6 md:grid-cols-2">
+
+                <!-- Pegawai -->
+                <div>
+                    <label class="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
+                        <i data-lucide="users" class="h-4 w-4 text-cyan-400"></i>
+                        Pegawai
+                    </label>
+
+                    <select
+                        name="employee_id"
+                        class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10">
+
+                        <option value="">Pilih Pegawai</option>
+
+                        {% for employee in employees %}
+                        <option
+                            value="{{ employee.id }}"
+                            {% if selected_employee_id and selected_employee_id == employee.id|string %}selected{% endif %}>
+                            {{ employee.nama }} - {{ employee.nip }}
+                        </option>
+                        {% endfor %}
+
+                    </select>
+                </div>
+
+                <!-- Tanggal -->
+                <div>
+                    <label class="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
+                        <i data-lucide="calendar-days" class="h-4 w-4 text-cyan-400"></i>
+                        Tanggal
+                    </label>
+
+                    <input
+                        type="date"
+                        name="tanggal_absensi"
+                        value="{{ selected_date or (attendance.tanggal_absensi.isoformat() if attendance else '') }}"
+                        class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10">
+                </div>
+                
+                <!-- ROW: JAM MASUK & JAM KELUAR (PULANG) -->
+                <!-- Jam Masuk -->
+                <div>
+                    <label class="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
+                        <i data-lucide="clock-3" class="h-4 w-4 text-cyan-400"></i>
+                        Jam Masuk
+                    </label>
+
+                    <input
+                        type="time"
+                        name="jam_masuk"
+                        value="{{ attendance.jam_masuk.strftime('%H:%M') if attendance and attendance.jam_masuk else '' }}"
+                        class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10">
+                </div>
+
+                <!-- Jam Keluar -->
+                <div>
+                    <label class="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
+                        <i data-lucide="clock-4" class="h-4 w-4 text-cyan-400"></i>
+                        Jam Keluar (Pulang)
+                    </label>
+
+                    <input
+                        type="time"
+                        name="jam_keluar"
+                        value="{{ attendance.jam_keluar.strftime('%H:%M') if attendance and attendance.jam_keluar else '' }}"
+                        class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10">
+                </div>
+
+                <!-- ROW BARU: JAM IZIN KELUAR & JAM IZIN MASUK -->
+                <!-- Jam Mulai Izin -->
+                <div>
+                    <label class="mb-2 flex items-center gap-2 text-sm font-medium text-amber-400">
+                        <i data-lucide="log-out" class="h-4 w-4 text-amber-400"></i>
+                        Mulai Izin (Keluar)
+                    </label>
+
+                    <input
+                        type="time"
+                        name="jam_izin_keluar"
+                        value="{{ attendance.jam_izin_keluar.strftime('%H:%M') if attendance and attendance.jam_izin_keluar else '' }}"
+                        class="w-full rounded-2xl border border-amber-500/30 bg-slate-950/70 px-4 py-3 text-white transition focus:border-amber-400 focus:ring-4 focus:ring-amber-400/10">
+                </div>
+
+                <!-- Jam Selesai Izin -->
+                <div>
+                    <label class="mb-2 flex items-center gap-2 text-sm font-medium text-amber-400">
+                        <i data-lucide="log-in" class="h-4 w-4 text-amber-400"></i>
+                        Selesai Izin (Kembali)
+                    </label>
+
+                    <input
+                        type="time"
+                        name="jam_izin_masuk"
+                        value="{{ attendance.jam_izin_masuk.strftime('%H:%M') if attendance and attendance.jam_izin_masuk else '' }}"
+                        class="w-full rounded-2xl border border-amber-500/30 bg-slate-950/70 px-4 py-3 text-white transition focus:border-amber-400 focus:ring-4 focus:ring-amber-400/10">
+                </div>
+
+                <!-- Status -->
+                <div>
+                    <label class="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
+                        <i data-lucide="badge-check" class="h-4 w-4 text-cyan-400"></i>
+                        Status
+                    </label>
+
+                    <select
+                        name="status"
+                        class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10">
+
+                        {% for status in statuses %}
+
+                        <option
+                            value="{{ status.value }}"
+                            {% if attendance and attendance.status == status.value %}
+                            selected
+                            {% elif not attendance and status.value == 'H' %}
+                            selected
+                            {% endif %}
+                        >
+                            {{ status.label }}
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+                </div>
+
+                <!-- Keterangan -->
+                <div>
+                    <label class="mb-2 flex items-center gap-2 text-sm font-medium text-slate-300">
+                        <i data-lucide="message-square-text" class="h-4 w-4 text-cyan-400"></i>
+                        Keterangan
+                    </label>
+
+                    <input
+                        type="text"
+                        name="keterangan"
+                        value="{{ attendance.keterangan if attendance and attendance.keterangan else '' }}"
+                        placeholder="Contoh: Sakit, Dinas Luar, Izin urus KTP..."
+                        class="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white placeholder:text-slate-500 transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10">
+                </div>
+
+            </div>
+
+            <div class="flex justify-end gap-3 border-t border-white/10 pt-6">
+
+                <a
+                    href="{{ cancel_url }}"
+                    class="rounded-2xl border border-white/10 px-6 py-3 text-sm font-medium text-slate-300 transition hover:bg-white/10">
+
+                    Batal
+
+                </a>
+
+                <button
+                    type="submit"
+                    class="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-500 px-6 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition hover:scale-[1.02] hover:from-cyan-300 hover:to-blue-400">
+
+                    <i data-lucide="save" class="h-4 w-4"></i>
+
+                    Simpan Data
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

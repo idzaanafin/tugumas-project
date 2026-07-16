@@ -1,0 +1,19 @@
+# Mengabaikan environment dan cache Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+env/
+
+# Mengabaikan file upload/foto development lokal agar tidak masuk ke image production
+app/static/uploads/employees/*
+!app/static/uploads/employees/.gitkeep
+
+# Mengabaikan database SQLite (jika ada sisa development)
+instance/
+*.db
+*.sqlite3
+
+# Mengabaikan file env lokal
+.env

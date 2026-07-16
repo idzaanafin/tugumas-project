@@ -1,0 +1,22 @@
+# Mengabaikan environment dan cache Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+env/
+
+# Mengabaikan dataset mentah karena sudah di-encode ke database/file statis
+dataset_wajah/
+employee_mapping.json
+
+# Mengabaikan database SQLite lokal dan data hasil generate (menggunakan Volume)
+instance/
+data/
+
+# Mengabaikan file env lokal
+.env
+
+# Mengabaikan script
+generate-qr.py
+register_faces.py

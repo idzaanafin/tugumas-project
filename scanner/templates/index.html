@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMO - QR Code Scanner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <style>
+        /* Modifikasi UI bawaan dari library html5-qrcode agar senada dengan desain kita */
+        #reader { border: none !important; border-radius: 0.75rem; overflow: hidden; background: #000; }
+        #reader video { 
+            transform: scaleX(-1) !important;
+            border-radius: 0.75rem; 
+            width: 100% !important;
+            object-fit: cover;
+        }
+        #reader__dashboard_section_csr span { color: #94a3b8 !important; }
+        #reader__dashboard_section_swaplink { color: #22d3ee !important; text-decoration: none; }
+        #reader button { 
+            background-color: #083344 !important; color: #67e8f9 !important; 
+            border: 1px solid #164e63 !important; padding: 6px 12px; border-radius: 8px; 
+            font-weight: bold; cursor: pointer; margin: 10px 0; transition: 0.3s;
+        }
+        #reader button:hover { background-color: #164e63 !important; }
+    </style>
+</head>
+<body class="bg-slate-950 min-h-screen p-2 md:p-4 font-sans text-slate-300 overflow-hidden">
+    <!-- Menggunakan lebar penuh layar untuk layout ekstra lega -->
+    <div class="mx-auto w-full max-w-[98%]">
+        
+        <!-- HEADER MINIMALIS -->
+        <header class="mb-4 flex items-center rounded-2xl border border-white/10 bg-slate-900/80 px-5 py-3 shadow-xl">
+            <h1 class="text-sm font-black uppercase tracking-[0.3em] text-cyan-400">Tugumas Offset - Absensi Kehadiran</h1>
+        </header>
+
+        <!-- GRID BERSAMPINGAN PADAT -->
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+            
+            <!-- AREA KAMERA & INFO (Kiri) -->
+            <div class="flex flex-col gap-3 lg:col-span-4 xl:col-span-3">
+                
+                <!-- Kotak Kamera -->
+                <div class="relative flex flex-col items-center overflow-hidden rounded-2xl border border-white/10 bg-slate-900 p-3 shadow-xl">
+                    
+                    <!-- Overlay Lock -->
+                    <div id="video-overlay" class="absolute inset-0 z-20 hidden flex-col items-center justify-center rounded-2xl bg-slate-950/90 backdrop-blur-md transition-all">
+                        <div id="overlay-icon" class="mb-2 text-5xl">✅</div>
+                        <h3 id="overlay-text" class="text-xl font-bold text-white px-2 text-center">Berhasil</h3>
+                        <p id="overlay-countdown" class="mt-2 rounded-full bg-white/10 px-3 py-1 text-[10px] font-semibold text-slate-300">
+                            Menunggu 5 detik...
+                        </p>
+                    </div>
+
+                    <!-- Tempat QR Scanner Render -->
+                    <div id="reader" class="w-full"></div>
+                    
+                    <div id="scan-indicator" class="mt-3 flex items-center gap-2 text-[11px] font-semibold text-cyan-400 transition-opacity">
+                        <span class="relative flex h-2 w-2">
+                            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-75"></span>
+                            <span class="relative inline-flex h-2 w-2 rounded-full bg-cyan-500"></span>
+                        </span>
+                        <span>Memindai QR Code...</span>
+                    </div>
+                </div>
+
+                <!-- KOTAK INFO (Bawah Kamera) -->
+                <div class="flex flex-col items-center justify-center rounded-2xl border border-white/10 bg-slate-900/50 p-5 shadow-xl text-center">
+                    <h2 class="text-lg font-black text-white">Silakan Scan QR Anda</h2>
+                    <p class="text-[11px] text-slate-400 mt-1 mb-4">Pastikan kode QR terlihat jelas</p>
+                    
+                    <!-- Jam Digital -->
+                    <div class="w-full rounded-xl bg-slate-950/60 p-3 border border-white/5 shadow-inner">
+                        <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-500" id="live-date">Memuat...</p>
+                        <p class="text-3xl font-black tracking-tighter text-white tabular-nums mt-1" id="live-time">00:00:00</p>
+                    </div>
+                </div>
+
+                <div id="toast-container" class="hidden rounded-xl border p-4 shadow-lg transition-all duration-300">                    
+                    <p id="toast-message" class="text-sm font-bold text-white"></p>
+                </div>
+            </div>
+
+            <!-- AREA TABEL (Kanan) -->
+            <div class="flex flex-col rounded-2xl border border-white/10 bg-slate-900/50 p-4 shadow-xl lg:col-span-8 xl:col-span-9">
+                
+                <div class="mb-3 flex items-center justify-between border-b border-white/10 pb-3">
+                    <h2 class="text-lg font-bold text-white">Data Kehadiran Hari Ini</h2>
+                    <div class="flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-950/40 px-3 py-1 text-[11px] font-bold text-cyan-300">
+                        Total Hadir: <span id="total-count">0</span>
+                    </div>
+                </div>
+                
+                <!-- CONTAINER TABEL COMPACT -->
+                <div class="rounded-xl border border-slate-200 bg-white shadow-lg overflow-hidden">
+                    <table class="w-full text-left text-[11px] text-slate-800 whitespace-nowrap">
+                        <thead class="bg-slate-100 uppercase tracking-wider text-slate-500 text-[10px]">
+                            <tr>
+                                <th class="px-3 py-2 font-bold border-b border-slate-200">Pegawai</th>
+                                <th class="px-2 py-2 text-center font-bold text-emerald-600 border-b border-slate-200">Hadir</th>
+                                <th class="px-2 py-2 text-center font-bold text-amber-500 border-b border-slate-200">Izin Keluar</th>
+                                <th class="px-2 py-2 text-center font-bold text-amber-500 border-b border-slate-200">Izin Kembali</th>
+                                <th class="px-2 py-2 text-center font-bold text-rose-500 border-b border-slate-200">Pulang</th>
+                                <th class="px-3 py-2 text-right font-bold border-b border-slate-200">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="today-list" class="divide-y divide-slate-100">
+                            <!-- Data di-render di sini oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MAIN_SERVER_URL = "http://127.0.0.1:5000/attendance/scanner";
+        const API_SCAN = `${MAIN_SERVER_URL}/scan`;
+        const API_TODAY = `${MAIN_SERVER_URL}/today`;
+
+        let isLocked = false; 
+
+        // 1. SISTEM AUDIO BEEP
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playBeep(frequency, type, duration) {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.type = type;
+            oscillator.frequency.value = frequency;
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.start();
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        function playSuccessSound() {
+            playBeep(880, 'sine', 0.3); 
+            setTimeout(() => playBeep(1760, 'sine', 0.35), 100);
+        }
+
+        function playErrorSound() { playBeep(100, 'sawtooth', 2.1); setTimeout(() => playBeep(150, 'sawtooth', 1.5), 120); }
+
+        // 2. SISTEM LOCK OVERLAY UI (5 DETIK)
+        function lockScanner(isSuccess, mainMessage) {
+            isLocked = true; 
+            
+            const overlay = document.getElementById('video-overlay');
+            const icon = document.getElementById('overlay-icon');
+            const text = document.getElementById('overlay-text');
+            const countdown = document.getElementById('overlay-countdown');
+            const indicator = document.getElementById('scan-indicator');
+
+            if (isSuccess) {
+                icon.innerText = "✅";
+                text.innerText = mainMessage || "Berhasil";
+                text.className = "text-xl font-bold text-emerald-400 px-2 text-center";
+                playSuccessSound();
+            } else {
+                icon.innerText = "❌";
+                text.innerText = mainMessage || "Gagal";
+                text.className = "text-xl font-bold text-rose-400 px-2 text-center";
+                playErrorSound();
+            }
+
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            indicator.classList.add('opacity-0'); 
+
+            let timeLeft = 5;
+            countdown.innerText = `Menunggu ${timeLeft} detik...`;
+            
+            const timer = setInterval(() => {
+                timeLeft -= 1;
+                if (timeLeft > 0) {
+                    countdown.innerText = `Menunggu ${timeLeft} detik...`;
+                } else {
+                    clearInterval(timer);
+                    overlay.classList.add('hidden');
+                    overlay.classList.remove('flex');
+                    indicator.classList.remove('opacity-0'); 
+                    isLocked = false;
+                }
+            }, 1000);
+        }
+
+        // 3. WAKTU LIVE
+        setInterval(() => {
+            const now = new Date();
+            const timeOptions = { hour12: false, timeZone: 'Asia/Jakarta' };
+            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Jakarta' };
+            
+            document.getElementById('live-time').innerText = now.toLocaleTimeString('id-ID', timeOptions);
+            document.getElementById('live-date').innerText = now.toLocaleDateString('id-ID', dateOptions);
+        }, 1000);
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast-container');            
+            document.getElementById('toast-message').innerText = message;
+            toast.className = `absolute bottom-4 left-4 right-4 rounded-xl border p-4 shadow-lg transition-all duration-300 z-50 ${
+                type === 'success' ? 'border-emerald-500 bg-emerald-900/90 text-emerald-100 backdrop-blur-sm' : 'border-rose-500 bg-rose-900/90 text-rose-100 backdrop-blur-sm'
+            }`;
+            setTimeout(() => { toast.classList.add('hidden'); }, 5000);
+        }
+
+        // 4. INISIALISASI QR SCANNER
+        function onScanSuccess(decodedText) {
+            if (isLocked) return;
+            isLocked = true; 
+
+            const now = new Date();
+            const wibOffsetMs = 7 * 60 * 60 * 1000;
+            const localTime = new Date(now.getTime() + wibOffsetMs);
+            const timestamp = localTime.toISOString().substring(0, 19);
+
+            fetch(API_SCAN, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ employee_id: decodedText, timestamp: timestamp })
+            })
+            .then(res => res.json().then(data => ({ status: res.status, body: data })))
+            .then(res => {
+                if (res.status === 200 || res.status === 201) {
+                    showToast(res.body.data.message, "success");
+                    lockScanner(true, "Tercatat"); 
+                    fetchTodayData(); 
+                } else {
+                    showToast(res.body.message, "error");
+                    lockScanner(false, "Ditolak"); 
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showToast("Tidak dapat terhubung ke server utama.", "error");
+                lockScanner(false, "Server Terputus");
+            });
+        }
+
+        const html5QrcodeScanner = new Html5QrcodeScanner(
+            "reader", 
+            { fps: 10, qrbox: { width: 250, height: 250 }, disableFlip: false }, 
+            false
+        );
+        html5QrcodeScanner.render(onScanSuccess);
+
+        // 5. FETCH & RENDER DATA PEGAWAI LIVE
+        async function fetchTodayData() {
+            try {
+                const response = await fetch(API_TODAY);
+                if (!response.ok) return;
+                const json = await response.json();
+                if (json.status === 'success') {
+                    document.getElementById('total-count').innerText = json.total_hadir;
+                    renderTodayList(json.data);
+                }
+            } catch (error) { console.error("Gagal menarik data dari server utama", error); }
+        }
+
+        function renderTodayList(data) {
+            const container = document.getElementById('today-list');
+            if (data.length === 0) {
+                container.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-xs text-slate-500">Belum ada pegawai terdaftar.</td></tr>`;
+                return;
+            }
+
+            container.innerHTML = data.map(record => {
+                const belumAbsen = record.status === '-';
+                
+                // Styling Baris Compact
+                const rowClass = belumAbsen ? "bg-neutral-400 opacity-60 grayscale transition-all" : "bg-white hover:bg-slate-50 transition-colors shadow-[0_1px_2px_rgba(0,0,0,0.02)]";
+                
+                // Teks nama dibuat italic dan pudar untuk yang belum absen
+                const nameClass = belumAbsen ? "text-neutral-900 font-medium italic" : "text-slate-800 font-bold";
+                const baseTimeClass = belumAbsen ? "text-slate-400" : "font-mono text-slate-700";
+                
+                let badgeClass = "bg-slate-300/50 text-slate-500 border-slate-300/50";
+                let textKet = "BELUM ABSEN";
+
+                if (!belumAbsen) {
+                    textKet = record.keterangan === 'tepat waktu' ? 'TEPAT WAKTU' : record.keterangan.toUpperCase();
+                    if (record.keterangan.includes('terlambat')) badgeClass = "bg-rose-100 text-rose-700 border-rose-200";
+                    else if (record.keterangan.includes('lembur')) badgeClass = "bg-amber-100 text-amber-700 border-amber-200";
+                    else if (record.keterangan.includes('tepat waktu')) badgeClass = "bg-emerald-100 text-emerald-700 border-emerald-200";
+                    else badgeClass = "bg-blue-100 text-blue-700 border-blue-200";
+                }
+
+                // Normalisasi Data Waktu Kosong
+                const jamMasuk = (record.jam_masuk && record.jam_masuk !== '--:--') ? record.jam_masuk : '-';
+                const jamIzinKeluar = (record.jam_izin_keluar && record.jam_izin_keluar !== '--:--') ? record.jam_izin_keluar : '-';
+                const jamIzinMasuk = (record.jam_izin_masuk && record.jam_izin_masuk !== '--:--') ? record.jam_izin_masuk : '-';
+                const jamKeluar = (record.jam_keluar && record.jam_keluar !== '--:--') ? record.jam_keluar : '-';
+
+                // Pewarnaan khusus
+                const clsMasuk = (!belumAbsen && jamMasuk !== '-') ? "text-emerald-600 font-bold" : baseTimeClass;
+                const clsIzinK = (!belumAbsen && jamIzinKeluar !== '-') ? "text-amber-500 font-bold" : baseTimeClass;
+                const clsIzinM = (!belumAbsen && jamIzinMasuk !== '-') ? "text-amber-500 font-bold" : baseTimeClass;
+                const clsKeluar = (!belumAbsen && jamKeluar !== '-') ? "text-rose-500 font-bold" : baseTimeClass;
+
+                // Memangkas padding vertikal (py-1.5) agar tinggi baris minimal
+                return `
+                <tr class="${rowClass}">
+                    <td class="px-3 py-1.5 truncate max-w-[150px] ${nameClass}">${record.nama}</td>
+                    <td class="px-2 py-1.5 text-center font-mono ${clsMasuk}">${jamMasuk}</td>
+                    <td class="px-2 py-1.5 text-center font-mono ${clsIzinK}">${jamIzinKeluar}</td>
+                    <td class="px-2 py-1.5 text-center font-mono ${clsIzinM}">${jamIzinMasuk}</td>
+                    <td class="px-2 py-1.5 text-center font-mono ${clsKeluar}">${jamKeluar}</td>
+                    <td class="px-3 py-1.5 text-right">
+                        <span class="inline-flex rounded border px-1.5 py-0.5 text-[9px] font-bold tracking-wider ${badgeClass}">
+                            ${textKet}
+                        </span>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        fetchTodayData();
+        setInterval(fetchTodayData, 60000);
+    </script>
+</body>
+</html>

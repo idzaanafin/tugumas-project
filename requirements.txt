@@ -1,0 +1,14 @@
+Flask==3.0.2
+flask-cors==6.0.2
+Flask-Login==0.6.3
+Flask-Migrate==4.1.0
+Flask-SQLAlchemy==3.1.1
+psycopg2-binary==2.9.12
+python-dotenv==1.0.1
+bcrypt==5.0.0
+requests==2.31.0
+qrcode==8.2
+flask-cors==6.0.2
+face_recognition 
+opencv-python 
+numpy
