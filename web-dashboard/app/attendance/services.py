@@ -143,15 +143,23 @@ def _parse_note(value: str | None):
     value = (value or "").strip()
     return value or None
 
-def floor_half(value):
+def calculate_hours(value):
+    value = round(value, 1)  # Round to 1 decimal place
     if value is None or value < 1.0:
         return 0.0
-    return math.floor(value * 2) / 2
+    return round(value*2)/2  # Round to nearest 0.5
 
 def work_hours(start_time: time, end_time: time) -> float:
     """Calculate work hours between two time objects."""
     if not start_time or not end_time:
         return 0.0
+    
+    if start_time < time(7, 30):
+        if start_time >= time(7, 20):
+            start_time = time(7, 30)
+        else:
+            start_time = time(7, 0)
+    
 
     start_dt = datetime.combine(date.today(), start_time)
     end_dt = datetime.combine(date.today(), end_time)
@@ -207,8 +215,8 @@ def get_employee_month_detail(employee_id, year: int | None = None, month: int |
                 "jam_izin_keluar": _format_time(record.jam_izin_keluar) if record else "-",
                 "jam_izin_masuk": _format_time(record.jam_izin_masuk) if record else "-",                
                 "jam_keluar": _format_time(record.jam_keluar) if record else "-",
-                "lembur": floor_half(overtime_hours(record.jam_masuk, record.jam_keluar)) if record and record.jam_masuk and record.jam_keluar else 0.0,
-                "jam_kerja": floor_half(work_hours(record.jam_masuk, record.jam_keluar)) if record and record.jam_masuk and record.jam_keluar else 0.0,
+                "lembur": calculate_hours(overtime_hours(record.jam_masuk, record.jam_keluar)) if record and record.jam_masuk and record.jam_keluar else 0.0,
+                "jam_kerja": calculate_hours(work_hours(record.jam_masuk, record.jam_keluar)) if record and record.jam_masuk and record.jam_keluar else 0.0,
                 "keterangan": record.keterangan if record and record.keterangan else "-",
             }
         )

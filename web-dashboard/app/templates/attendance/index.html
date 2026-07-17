@@ -265,8 +265,8 @@
                             <th class="border-b border-white/10 px-6 py-4">Tanggal</th>
                             <th class="border-b border-white/10 px-6 py-4 text-center">Status</th>
                             <th class="border-b border-white/10 px-6 py-4">Masuk - Keluar</th>
-                            <th class="border-b border-white/10 px-6 py-4">Lembur</th>
                             <th class="border-b border-white/10 px-6 py-4">Jam Kerja</th>
+                            <th class="border-b border-white/10 px-6 py-4">Lembur</th>
                             <th class="border-b border-white/10 px-6 py-4">Keterangan</th>
                             <th class="border-b border-white/10 px-6 py-4 text-right">Aksi</th>
                         </tr>
@@ -313,16 +313,16 @@
                             </td>
 
                             <td class="px-6 py-4">
-                                {% if day.record and day.lembur %}
-                                    <div class="font-bold text-lg text-cyan-300">{{ day.lembur | smart_hours }} jam</div>
+                                {% if day.record and day.jam_kerja %}
+                                    <div class="font-bold text-lg text-cyan-300">{{ day.jam_kerja | smart_hours }} jam</div>
                                 {% else %}
                                     <span class="text-slate-600">-</span>
                                 {% endif %}
                             </td>
 
                             <td class="px-6 py-4">
-                                {% if day.record and day.jam_kerja %}
-                                    <div class="font-bold text-lg text-cyan-300">{{ day.jam_kerja | smart_hours }} jam</div>
+                                {% if day.record and day.lembur %}
+                                    <div class="font-bold text-lg text-cyan-300">{{ day.lembur | smart_hours }} jam</div>
                                 {% else %}
                                     <span class="text-slate-600">-</span>
                                 {% endif %}
