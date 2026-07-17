@@ -145,8 +145,8 @@ def _parse_note(value: str | None):
 
 def calculate_hours(value):
     value = round(value, 1)  # Round to 1 decimal place
-    if value is None or value < 1.0:
-        return 0.0
+    # if value is None or value < 1.0:
+        # return 0.0
     return round(value*2)/2  # Round to nearest 0.5
 
 def work_hours(start_time: time, end_time: time, is_saturday: bool) -> float:
@@ -188,7 +188,7 @@ def overtime_hours(start_time: time, end_time: time, is_saturday: bool) -> float
     if not start_time or not end_time:
         return 0.0
 
-    default_start = time(8,00)
+    default_start = time(7,30)
     default_end = time(16,00) if not is_saturday else time(13,30)
     # calculate early overtime (before default start) and late overtime (after default end)
     early_overtime = 0.0
@@ -388,8 +388,8 @@ def delete_attendance(attendance: Attendance):
 
 def process_scan_attendance(employee_id: str, scan_datetime: datetime):
     BATAS_MASUK = datetime.strptime("08:15", "%H:%M").time()
-    BATAS_LEMBUR_PAGI = datetime.strptime("07:30", "%H:%M").time()
-    BATAS_LEMBUR_SORE = datetime.strptime("17:00", "%H:%M").time()
+    BATAS_LEMBUR_PAGI = datetime.strptime("07:25", "%H:%M").time()
+    BATAS_LEMBUR_SORE = datetime.strptime("16:25", "%H:%M").time()
     BATAS_PULANG = datetime.strptime("15:50", "%H:%M").time()
     
     employee = get_employee(employee_id)    
