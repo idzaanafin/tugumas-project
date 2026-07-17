@@ -42,8 +42,10 @@ def index():
         
         detail_context = get_employee_month_detail(current_emp.id, year, month)
                         
-        count_hadir = sum(1 for d in detail_context['days'] if d['status'] == 'H' and d['jam_kerja'] >= 8) + \
-                      sum(0.5 for d in detail_context['days'] if d['status'] == 'H' and d['jam_kerja'] < 8)
+        count_hadir = sum(1 for d in detail_context['days'] if d['status'] == 'H' and d['jam_kerja'] >= 7 and not d['date'].weekday() == 5) + \
+                      sum(0.5 for d in detail_context['days'] if d['status'] == 'H' and d['jam_kerja'] < 7 and not d['date'].weekday() == 5) + \
+                      sum(1 for d in detail_context['days'] if d['status'] == 'H' and d['jam_kerja'] >= 5 and d['date'].weekday() == 5) + \
+                      sum(0.5 for d in detail_context['days'] if d['status'] == 'H' and d['jam_kerja'] < 5 and d['date'].weekday() == 5)
 
         count_izin = sum(1 for d in detail_context['days'] if d['status'] == 'I')
         count_alpa = sum(1 for d in detail_context['days'] if d['status'] == 'A')

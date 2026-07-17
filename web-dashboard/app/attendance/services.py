@@ -149,34 +149,62 @@ def calculate_hours(value):
         return 0.0
     return round(value*2)/2  # Round to nearest 0.5
 
-def work_hours(start_time: time, end_time: time) -> float:
+def work_hours(start_time: time, end_time: time, is_saturday: bool) -> float:
     """Calculate work hours between two time objects."""
     if not start_time or not end_time:
-        return 0.0
+        return 0.0    
+
+    if start_time < time(8, 15):
+        start_time = time(8, 00)        
     
-    if start_time < time(7, 30):
-        if start_time >= time(7, 20):
-            start_time = time(7, 30)
-        else:
-            start_time = time(7, 0)
+    if end_time > time(13, 20) and is_saturday:
+        end_time = time(13, 30)
+    elif end_time > time(15, 50) and not is_saturday:
+        end_time = time(16, 00)
     
 
     start_dt = datetime.combine(date.today(), start_time)
     end_dt = datetime.combine(date.today(), end_time)
+
+    if is_saturday:
+        rest = 0.0
+    else:
+        rest = 1.0
 
     if end_dt < start_dt:
         # If end time is before start time, assume it crosses midnight
         end_dt += timedelta(days=1)
 
     duration = end_dt - start_dt
-    return duration.total_seconds() / 3600.0  # Convert seconds to hours
+    duration =  duration.total_seconds() / 3600.0
+    
+    if end_time > time(12, 0):
+        duration -= rest
+    
+    return duration
 
-def overtime_hours(start_time: time, end_time: time) -> float:
+def overtime_hours(start_time: time, end_time: time, is_saturday: bool) -> float:
     """Calculate overtime hours based on work hours."""
-    total_work_hours = work_hours(start_time, end_time)
-    standard_work_hours = 8.0
-    overtime = max(0.0, total_work_hours - standard_work_hours)
-    return overtime
+    if not start_time or not end_time:
+        return 0.0
+
+    default_start = time(8,00)
+    default_end = time(16,00) if not is_saturday else time(13,30)
+    # calculate early overtime (before default start) and late overtime (after default end)
+    early_overtime = 0.0
+    late_overtime = 0.0
+    start_dt = datetime.combine(date.today(), start_time)
+    end_dt = datetime.combine(date.today(), end_time)
+    ds_dt = datetime.combine(date.today(), default_start)
+    de_dt = datetime.combine(date.today(), default_end)
+
+    if start_dt < ds_dt:
+        early_overtime = (ds_dt - start_dt).total_seconds() / 3600.0
+    
+    if end_dt > de_dt:
+        late_overtime = (end_dt - de_dt).total_seconds() / 3600.0
+    
+    return early_overtime + late_overtime
 
 
 def get_employee_month_detail(employee_id, year: int | None = None, month: int | None = None):
@@ -215,8 +243,8 @@ def get_employee_month_detail(employee_id, year: int | None = None, month: int |
                 "jam_izin_keluar": _format_time(record.jam_izin_keluar) if record else "-",
                 "jam_izin_masuk": _format_time(record.jam_izin_masuk) if record else "-",                
                 "jam_keluar": _format_time(record.jam_keluar) if record else "-",
-                "lembur": calculate_hours(overtime_hours(record.jam_masuk, record.jam_keluar)) if record and record.jam_masuk and record.jam_keluar else 0.0,
-                "jam_kerja": calculate_hours(work_hours(record.jam_masuk, record.jam_keluar)) if record and record.jam_masuk and record.jam_keluar else 0.0,
+                "lembur": calculate_hours(overtime_hours(record.jam_masuk, record.jam_keluar, current_date.weekday() == 5)) if record and record.jam_masuk and record.jam_keluar else 0.0,
+                "jam_kerja": work_hours(record.jam_masuk, record.jam_keluar, current_date.weekday() == 5) if record and record.jam_masuk and record.jam_keluar else 0.0,
                 "keterangan": record.keterangan if record and record.keterangan else "-",
             }
         )

@@ -23,7 +23,7 @@ def list_employees():
 	return (
 		db.session.query(Employee)
 		.options(selectinload(Employee.department), selectinload(Employee.position))
-		.order_by(Employee.created_at.desc())
+		.order_by(Employee.nip.asc())
 		.all()
 	)
 
