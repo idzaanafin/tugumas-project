@@ -11,7 +11,7 @@ from app.core.extensions import db
 from app.models.attendance import Attendance
 from app.models.employee import Employee
 from app.models.enums import AttendanceStatus
-
+import math
 
 MONTH_NAMES_ID = [
     "Januari",
@@ -143,6 +143,11 @@ def _parse_note(value: str | None):
     value = (value or "").strip()
     return value or None
 
+def floor_half(value):
+    if value is None or value < 1.0:
+        return 0.0
+    return math.floor(value * 2) / 2
+
 def work_hours(start_time: time, end_time: time) -> float:
     """Calculate work hours between two time objects."""
     if not start_time or not end_time:
@@ -202,8 +207,8 @@ def get_employee_month_detail(employee_id, year: int | None = None, month: int |
                 "jam_izin_keluar": _format_time(record.jam_izin_keluar) if record else "-",
                 "jam_izin_masuk": _format_time(record.jam_izin_masuk) if record else "-",                
                 "jam_keluar": _format_time(record.jam_keluar) if record else "-",
-                "lembur": overtime_hours(record.jam_masuk, record.jam_keluar) if record and record.jam_masuk and record.jam_keluar else 0.0,
-                "jam_kerja": work_hours(record.jam_masuk, record.jam_keluar) if record and record.jam_masuk and record.jam_keluar else 0.0,
+                "lembur": floor_half(overtime_hours(record.jam_masuk, record.jam_keluar)) if record and record.jam_masuk and record.jam_keluar else 0.0,
+                "jam_kerja": floor_half(work_hours(record.jam_masuk, record.jam_keluar)) if record and record.jam_masuk and record.jam_keluar else 0.0,
                 "keterangan": record.keterangan if record and record.keterangan else "-",
             }
         )
